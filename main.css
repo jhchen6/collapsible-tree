@@ -14,13 +14,13 @@ svg{
     border: 1px solid lightgrey;
 }
 
-.node {
+circle.node {
     stroke: steelblue;
-    stroke-width: 1px;
+    stroke-width: 1.5px;
     fill: lightgrey;
 }
 
-.node--expanded {
+circle.node--expanded {
     fill: white;
 }
 
@@ -39,4 +39,5 @@ svg{
 .link {
     stroke: lightgrey;
     stroke-width: 1px;
+    fill: none;
 }
