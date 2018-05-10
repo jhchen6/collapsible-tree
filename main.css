@@ -1,0 +1,42 @@
+body {
+    width: 960px;
+    position: relative;
+    margin: auto;
+}
+
+button {
+    position: absolute;
+    left: 30px;
+    top: 100px;
+}
+
+svg{
+    border: 1px solid lightgrey;
+}
+
+.node {
+    stroke: steelblue;
+    stroke-width: 1px;
+    fill: lightgrey;
+}
+
+.node--expanded {
+    fill: white;
+}
+
+.label {
+    font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.leaf {
+    text-anchor: start;
+}
+
+.inner {
+    text-anchor: end;
+}
+
+.link {
+    stroke: lightgrey;
+    stroke-width: 1px;
+}
