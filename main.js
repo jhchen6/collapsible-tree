@@ -6,262 +6,310 @@ $(document).ready(function () {
         width = +$(svg).attr("width"),
         height = +$(svg).attr("height");
     var setPos = initSetPos().size([width - 240, height - 20]);
-
+    var display = initDisplay().context(svg);
     var tree = data;
     buildTree(tree);
+    setCollapse(tree, 0);
+    run();
 
-    var layers = buildLayers(tree);
-    setPos(layers);
-    display(layers, svg);
-    addHandler();
-});
+    function run() {
+        var layers = buildLayers(tree);
+        setPos(layers, tree);
 
-function buildTree(tree) {
-    tree.level = (tree.parent) ? tree.parent.level + 1 : 0;
-
-    if (tree.children) {
-        tree.children.sort(function (a, b) {
-            return a.name.localeCompare(b.name);
+        var nodes = [];
+        layers.forEach(function (layer) {
+            nodes = nodes.concat(layer);
         });
-
-        var maxHeight = -Infinity;
-        tree.children.forEach(function (child) {
-            child.parent = tree;
-            buildTree(child);
-            if (child.height > maxHeight) {
-                maxHeight = child.height;
-            }
-        });
-        tree.height = maxHeight + 1;
+        display(nodes);
     }
-    else {
-        tree.height = 0;
-    }
-}
 
-function buildLayers(tree) {
-    var layers = [];
-    addToLayers(tree);
-    return layers;
-
-    function addToLayers(tree) {
-        if (layers[tree.level] == undefined) {
-            layers[tree.level] = [];
+    function setCollapse(tree, threshold) {
+        if (tree.level > threshold) {
+            tree.collapsed = true;
         }
-        layers[tree.level].push(tree);
         if (tree.children) {
-            tree.children.forEach(addToLayers);
+            tree.children.forEach(function (child) {
+                setCollapse(child, threshold)
+            });
         }
     }
-}
 
-function initSetPos() {
-    var width,
-        height;
+    function buildTree(tree) {
+        tree.level = (tree.parent) ? tree.parent.level + 1 : 0;
 
-    function setPos(layers) {
-        var numLayer = layers.length;
-        setShift();
+        if (tree.children) {
+            tree.children.sort(function (a, b) {
+                return a.name.localeCompare(b.name);
+            });
 
-        var shiftMin = Infinity,
-            shiftMax = -Infinity,
-            dShift,
-            maxLevel = numLayer - 1;
-        findMinMaxShifts();
-        dShift = shiftMax - shiftMin;
-
-        var dw = width / (maxLevel == 0 ? 1 : maxLevel),
-            dh = height / dShift;
-        setCoords();
-
-
-        function setShift() {
-            //bottom layer
-            var layer1,
-                layer2 = layers[numLayer - 1],
-                lenLayer = layer2.length,
-                i, j, k,
-                firstInner,
-                children,
-                lenChild,
-                tempShift,
-                node1,
-                node2;
-
-            layer2.acc = 0;
-
-            node2 = layer2[0];
-            node2.shift = 0;//
-            for (j = 1; j < lenLayer; j++) {
-                node1 = node2;
-                node2 = layer2[j];
-                node2.shift = node1.shift + 1;
-                if (node2.parent !== node1.parent) {
-                    node2.shift++;//
+            var maxHeight = -Infinity;
+            tree.children.forEach(function (child) {
+                child.parent = tree;
+                buildTree(child);
+                if (child.height > maxHeight) {
+                    maxHeight = child.height;
                 }
+            });
+            tree.height = maxHeight + 1;
+        }
+        else {
+            tree.height = 0;
+        }
+    }
+
+    function buildLayers(tree) {
+        var layers = [];
+        addToLayers(tree);
+        return layers;
+
+        function addToLayers(tree) {
+            if (layers[tree.level] == undefined) {
+                layers[tree.level] = [];
+            }
+            layers[tree.level].push(tree);
+            if (tree.collapsed) return;
+            if (tree.children) {
+                tree.children.forEach(addToLayers);
+            }
+        }
+    }
+
+    function initSetPos() {
+        var width,
+            height;
+
+        function setPos(layers, tree) {
+            var numLayer = layers.length;
+            if (numLayer === 1) {
+                var node = layers[0][0];
+                node.x = 0;
+                node.y = height / 2;
+                return;
             }
 
-            //other layers
-            for (i = numLayer - 2; i >= 0; i--) {
-                layer1 = layer2;
-                layer2 = layers[i];
-                lenLayer = layer2.length;
+            setShift();
+
+            var shiftMin = Infinity,
+                shiftMax = -Infinity,
+                dShift,
+                maxLevel = tree.height;
+            findMinMaxShifts();
+            dShift = shiftMax - shiftMin;
+
+            var dw = width / maxLevel,
+                dh = height / dShift;
+            setCoords();
+
+
+            function setShift() {
+                //bottom layer
+                var layer1,
+                    layer2 = layers[numLayer - 1],
+                    lenLayer = layer2.length,
+                    i, j, k,
+                    firstInner,
+                    children,
+                    lenChild,
+                    tempShift,
+                    node1,
+                    node2;
+
                 layer2.acc = 0;
 
-                for (j = 0; j < lenLayer; j++) {
-                    if (layer2[j].children) break;
-                }
-
-                firstInner = j;
-                node2 = layer2[firstInner];
-                children = node2.children;
-                node2.shift = (children[0].shift +
-                    children[children.length - 1].shift) / 2 + layer1.acc;
-
-                for (j = firstInner - 1; j >= 0; j--) {
+                node2 = layer2[0];
+                node2.shift = 0;//
+                for (j = 1; j < lenLayer; j++) {
                     node1 = node2;
                     node2 = layer2[j];
-                    node2.shift = node1.shift - 1;
+                    node2.shift = node1.shift + 1;
                     if (node2.parent !== node1.parent) {
-                        node2.shift--;//
+                        node2.shift++;//
                     }
                 }
 
-                node2 = layer2[firstInner];
-                for (j = firstInner + 1; j < lenLayer; j++) {
-                    node1 = node2;
-                    node2 = layer2[j];
-                    node2.shift = node1.shift + ((node2.parent === node1.parent) ? 1 : 2);
+                //other layers
+                for (i = numLayer - 2; i >= 0; i--) {
+                    layer1 = layer2;
+                    layer2 = layers[i];
+                    lenLayer = layer2.length;
+                    layer2.acc = 0;
 
+                    for (j = 0; j < lenLayer; j++) {
+                        if (layer2[j].children && !layer2[j].collapsed) break;
+                    }
+
+                    firstInner = j;
+                    node2 = layer2[firstInner];
                     children = node2.children;
-                    if (children) {
-                        lenChild = children.length;
-                        tempShift = (children[0].shift + children[lenChild - 1].shift) / 2 + layer1.acc;
-                        if (tempShift > node2.shift) {
-                            node2.shift = tempShift;
+                    node2.shift = (children[0].shift +
+                        children[children.length - 1].shift) / 2 + layer1.acc;
+
+                    for (j = firstInner - 1; j >= 0; j--) {
+                        node1 = node2;
+                        node2 = layer2[j];
+                        node2.shift = node1.shift - 1;
+                        if (node2.parent !== node1.parent) {
+                            node2.shift--;//
                         }
-                        else if (tempShift < node2.shift) {
-                            layer1.acc += node2.shift - tempShift;
+                    }
+
+                    node2 = layer2[firstInner];
+                    for (j = firstInner + 1; j < lenLayer; j++) {
+                        node1 = node2;
+                        node2 = layer2[j];
+                        node2.shift = node1.shift + ((node2.parent === node1.parent) ? 1 : 2);
+
+                        children = node2.children;
+                        if (children && !node2.collapsed) {
+                            lenChild = children.length;
+                            tempShift = (children[0].shift + children[lenChild - 1].shift) / 2 + layer1.acc;
+                            if (tempShift > node2.shift) {
+                                node2.shift = tempShift;
+                            }
+                            else if (tempShift < node2.shift) {
+                                layer1.acc += node2.shift - tempShift;
+                            }
+                            for (k = 0; k < lenChild; k++) {
+                                moveTree(children[k], layer1.acc);
+                            }
                         }
-                        for (k = 0; k < lenChild; k++) {
-                            moveTree(children[k], layer1.acc);
+                    }
+                }
+            }
+
+            function moveTree(tree, d) {
+                tree.shift += d;
+                if (tree.children && !tree.collapsed) {
+                    tree.children.forEach(function (child) {
+                        moveTree(child, d);
+                    });
+                }
+            }
+
+            function findMinMaxShifts() {
+                for (var i = 0; i < numLayer; i++) {
+                    var layer = layers[i],
+                        lenLayer = layer.length;
+                    for (var j = 0; j < lenLayer; j++) {
+                        var node = layer[j];
+                        if (node.shift < shiftMin) {
+                            shiftMin = node.shift;
                         }
+                        if (node.shift > shiftMax) {
+                            shiftMax = node.shift;
+                        }
+                    }
+                }
+            }
+
+            function setCoords() {
+                for (var i = 0; i < numLayer; i++) {
+                    var layer = layers[i],
+                        lenLayer = layer.length;
+                    for (var j = 0; j < lenLayer; j++) {
+                        var node = layer[j];
+                        node.x = node.level * dw;
+                        node.y = (node.shift - shiftMin) * dh;
                     }
                 }
             }
         }
 
-        function moveTree(tree, d) {
-            tree.shift += d;
-            if (tree.children) {
-                tree.children.forEach(function (child) {
-                    moveTree(child, d);
+        setPos.size = function (_) {
+            return arguments.length ? (width = _[0], height = _[1], setPos) : [width, height];
+        }
+        return setPos;
+    }
+
+    function initDisplay() {
+        var svg,
+            $g,
+            $gLink,
+            $gNode,
+            dx = 90;
+
+        function display(nodes) {
+            drawLink();
+
+            drawNode();
+
+            function drawLink() {
+                $gLink.empty();
+                nodes.forEach(function (node) {
+                    if (node.children && !node.collapsed) {
+                        node.children.forEach(function (child) {
+                            append($gLink, "path").attr({
+                                "class": "link",
+                                "d": 'M ' + node.x + ',' + node.y +
+                                    ' C ' + (node.x + dx) + ',' + node.y +
+                                    ' ' + (child.x - dx) + ',' + child.y +
+                                    ' ' + child.x + ',' + child.y
+                            });
+                        });
+                    }
+                });
+            }
+
+            function drawNode() {
+                var $node;
+                $gNode.empty();
+                nodes.forEach(function (node, index) {
+                    $node = append($gNode, "g")
+                        .attr({
+                            "transform": 'translate(' + node.x + ',' + node.y + ')',
+                            "class": "node"
+                        })
+                        .click(function (evt) {
+                            //get node object
+                            var node = nodes[index];
+                            //filter //set flag
+                            node.collapsed = (node.collapsed) ? false : true;
+                            run();
+                        });
+                    append($node, "circle")
+                        .attr({
+                            "class": "symbol " + ((node.children && node.collapsed) ? "collapsed" : ""),
+                            "r": 4.5
+                        });
+                    append($node, "text")
+                        .attr({
+                            "class": "label " + (node.children ? "inner" : "leaf"),
+                            dy: "0.31em",
+                            dx: (node.children ? "-" : "") + "0.7em"
+                        })
+                        .text(node.name);
                 });
             }
         }
 
-        function findMinMaxShifts() {
-            for (var i = 0; i < numLayer; i++) {
-                var layer = layers[i],
-                    lenLayer = layer.length;
-                for (var j = 0; j < lenLayer; j++) {
-                    var node = layer[j];
-                    if (node.shift < shiftMin) {
-                        shiftMin = node.shift;
-                    }
-                    if (node.shift > shiftMax) {
-                        shiftMax = node.shift;
-                    }
-                }
-            }
+        display.context = function (_) {
+            return (arguments.length) ? (svg = _, init(), display) : svg;
+        }
+        function init() {
+            $(svg).empty();
+            $g = append(svg, "g").attr("transform", 'translate(' + 120 + ',' + 10 + ')');
+            $gLink = append($g, "g").attr("id", "links");
+            $gNode = append($g, "g").attr("id", "nodes");
         }
 
-        function setCoords() {
-            for (var i = 0; i < numLayer; i++) {
-                var layer = layers[i],
-                    lenLayer = layer.length;
-                for (var j = 0; j < lenLayer; j++) {
-                    var node = layer[j];
-                    node.x = node.level * dw;
-                    node.y = (node.shift - shiftMin) * dh;
-                }
-            }
+        function append(parent, tag) {
+            var elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
+            $(parent).append(elem);
+            return $(elem);
         }
+        return display;
     }
 
-    setPos.size = function (_) {
-        return arguments.length ? (width = _[0], height = _[1], setPos) : [width, height];
-    }
-    return setPos;
-}
 
-function display(layers, svg) {
-    var numLayer = layers.length;
-    var $g = append(svg, "g").attr("transform", 'translate(' + 120 + ',' + 10 + ')');
-    var dx = 90;
-    drawLink();
-    drawNode();
+    function initAddHandler() {
+        var nodes = [];
+        function addHandler() {
 
-    function drawLink() {
-        var i, j,
-            layer,
-            lenLayer,
-            node;
-        for (i = 0; i < numLayer; i++) {
-            layer = layers[i];
-            lenLayer = layer.length;
-            for (j = 0; j < lenLayer; j++) {
-                node = layer[j];
-                if (node.children) {
-                    node.children.forEach(function (child) {
-                        append($g, "path").attr({
-                            "class": "link",
-                            "d": 'M ' + node.x + ',' + node.y +
-                                ' C ' + (node.x + dx) + ',' + node.y +
-                                ' ' + (child.x - dx) + ',' + child.y +
-                                ' ' + child.x + ',' + child.y
-                        });
-                    });
-                }
-            }
         }
-    }
 
-    function drawNode() {
-        var i, j,
-            layer,
-            lenLayer,
-            node,
-            $node;
-        for (i = 0; i < numLayer; i++) {
-            layer = layers[i];
-            lenLayer = layer.length;
-            for (j = 0; j < lenLayer; j++) {
-                node = layer[j];
-                $node = append($g, "g").attr("transform", 'translate(' + node.x + ',' + node.y + ')');
-                append($node, "circle")
-                    .attr({ "class": "node", r: 4.5 });
-                append($node, "text")
-                    .attr({
-                        "class": "label " + (node.children ? "inner" : "leaf"),
-                        dy: "0.31em",
-                        dx: (node.children ? "-" : "") + "0.7em"
-                    })
-                    .text(node.name);
-            }
+        addHandler.data = function (_) {
+            return arguments.length ? (nodes = _, addHandler) : nodes;
         }
+        return addHandler;
     }
-
-    function append(parent, tag) {
-        var elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
-        $(parent).append(elem);
-        return $(elem);
-    }
-}
-
-function addHandler() {
-    $(".node").click(function (evt) {
-        var elem = evt.target;
-        elem.classList.toggle("node--expanded");
-    });
-}
+});

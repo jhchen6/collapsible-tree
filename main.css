@@ -14,18 +14,18 @@ svg{
     border: 1px solid lightgrey;
 }
 
-circle.node {
+.symbol {
     stroke: steelblue;
     stroke-width: 1.5px;
-    fill: lightgrey;
-}
-
-circle.node--expanded {
     fill: white;
 }
 
+.symbol.collapsed {
+    fill: lightgrey;
+}
+
 .label {
-    font: 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 .leaf {
