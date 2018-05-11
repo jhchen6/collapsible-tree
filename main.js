@@ -106,13 +106,16 @@ $(document).ready(function () {
                 var layer1,
                     layer2 = layers[numLayer - 1],
                     lenLayer = layer2.length,
-                    i, j, k,
+                    i, j, k, m,
                     firstInner,
                     children,
                     lenChild,
                     tempShift,
                     node1,
-                    node2;
+                    node2,
+                    innerNodes = [],
+                    previousInner,
+                    dShift;
 
                 layer2.acc = 0;
 
@@ -121,10 +124,7 @@ $(document).ready(function () {
                 for (j = 1; j < lenLayer; j++) {
                     node1 = node2;
                     node2 = layer2[j];
-                    node2.shift = node1.shift + 1;
-                    if (node2.parent !== node1.parent) {
-                        node2.shift++;//
-                    }
+                    node2.shift = node1.shift + ((node2.parent === node1.parent) ? 1 : 2);
                 }
 
                 //other layers
@@ -139,6 +139,7 @@ $(document).ready(function () {
                     }
 
                     firstInner = j;
+                    innerNodes.push(firstInner);
                     node2 = layer2[firstInner];
                     children = node2.children;
                     node2.shift = (children[0].shift +
@@ -147,10 +148,7 @@ $(document).ready(function () {
                     for (j = firstInner - 1; j >= 0; j--) {
                         node1 = node2;
                         node2 = layer2[j];
-                        node2.shift = node1.shift - 1;
-                        if (node2.parent !== node1.parent) {
-                            node2.shift--;//
-                        }
+                        node2.shift = node1.shift - ((node2.parent === node1.parent) ? 1 : 2);
                     }
 
                     node2 = layer2[firstInner];
@@ -161,6 +159,7 @@ $(document).ready(function () {
 
                         children = node2.children;
                         if (children && !node2.collapsed) {
+                            innerNodes.push(j);
                             lenChild = children.length;
                             tempShift = (children[0].shift + children[lenChild - 1].shift) / 2 + layer1.acc;
                             if (tempShift > node2.shift) {
@@ -171,6 +170,11 @@ $(document).ready(function () {
                             }
                             for (k = 0; k < lenChild; k++) {
                                 moveTree(children[k], layer1.acc);
+                            }
+                            previousInner = innerNodes[innerNodes.length - 2];
+                            dShift = (layer2[j].shift - layer2[previousInner].shift) / (j - previousInner);
+                            for (m = previousInner + 1; m < j; m++) {
+                                layer2[m].shift = layer2[m - 1].shift + dShift;
                             }
                         }
                     }
