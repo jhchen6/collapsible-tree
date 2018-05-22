@@ -6,7 +6,7 @@ a coding practice
 
 the coding practice is following [this](https://bl.ocks.org/mbostock/4339083) example created by [Mike Bostock](https://bost.ocks.org/mike/). 
 
-## examples
+## images
 
 ![collapsed tree](./img/collapsed.png)
 
