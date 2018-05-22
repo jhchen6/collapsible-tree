@@ -1,6 +1,6 @@
 # Collapsible Tree
 
-a coding practice
+a coding practice implementing collapsible tree without using `d3.js`
 
 ## inspiration
 
