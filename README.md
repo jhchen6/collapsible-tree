@@ -13,3 +13,9 @@ the coding practice is following [this](https://bl.ocks.org/mbostock/4339083) ex
 ![partially expanded tree](./img/partially-expanded.png)
 
 ![fully expanded tree](./img/fully-expanded.png)
+
+## future work
+
+1. animate the transition
+2. use better position algorithm
+3. adjust position instead of redraw
