@@ -1,43 +1,33 @@
 body {
     width: 960px;
-    position: relative;
     margin: auto;
 }
 
-button {
-    position: absolute;
-    left: 30px;
-    top: 100px;
-}
-
-svg{
+svg {
     border: 1px solid lightgrey;
 }
 
-.symbol {
-    stroke: steelblue;
-    stroke-width: 1.5px;
-    fill: white;
-}
-
-.symbol.collapsed {
-    fill: lightgrey;
-}
-
-.label {
-    font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-.leaf {
-    text-anchor: start;
-}
-
-.inner {
-    text-anchor: end;
-}
-
-.link {
+path {
+    fill: none;
     stroke: lightgrey;
     stroke-width: 1px;
-    fill: none;
 }
+
+circle {
+    stroke: steelblue;
+    stroke-width: 1px;
+}
+
+text {
+    font: 11px sans-serif;
+}
+
+.node {
+    cursor: pointer;
+}
+
+/* button {
+    position: relative;
+    top: 40px;
+    left: 20px;
+} */
